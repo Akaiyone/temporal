@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberApp Suite</title>
+    <style>
+        /* Estilos Comuns */
+        .page {
+            display: none;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        .active-page {
+            display: flex;
+        }
+
+        .page-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background-color: #002222;
+            color: #00ff88;
+            border: 2px solid #00ff88;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .page-toggle:hover {
+            background-color: #00ff88;
+            color: #002222;
+            box-shadow: 0 0 15px #00ff88;
+        }
+
+        /* Notepad Sci-Fi */
+        #notepadPage {
+            background-color: #0a0a0a;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+        }
+
+        .notepad-toolbar {
+            padding: 15px;
+            background-color: #0f1a1a;
+            border-bottom: 2px solid #00ff88;
+            display: flex;
+            gap: 15px;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+        }
+
+        .notepad-toolbar button {
+            padding: 8px 15px;
+            border: 1px solid #00ff88;
+            background-color: #002222;
+            color: #00ff88;
+            cursor: pointer;
+            border-radius: 3px;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .notepad-toolbar button:hover {
+            background-color: #00ff88;
+            color: #002222;
+            box-shadow: 0 0 15px #00ff88;
+            transform: translateY(-2px);
+        }
+
+        #editor {
+            flex-grow: 1;
+            padding: 25px;
+            border: none;
+            outline: none;
+            resize: none;
+            font-size: 16px;
+            background-color: #001a1a;
+            color: #00ff00;
+            caret-color: #00ff00;
+            border-left: 3px solid #00ff88;
+            text-shadow: 0 0 8px rgba(0, 255, 0, 0.3);
+        }
+
+        /* Organizador Sci-Fi */
+        #organizerPage {
+            background-color: #001a1a;
+            color: #00ff88;
+            font-family: 'Courier New', monospace;
+        }
+
+        .organizer-header {
+            background-color: #0f1a1a;
+            padding: 15px 20px;
+            border-bottom: 2px solid #00ff88;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .organizer-header h1 {
+            text-shadow: 0 0 8px rgba(0, 255, 136, 0.3);
+            letter-spacing: 2px;
+        }
+
+        #task-form {
+            margin-bottom: 20px;
+            padding: 20px;
+        }
+
+        #task-input {
+            padding: 12px;
+            width: 100%;
+            margin-bottom: 15px;
+            background-color: #002222;
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        #task-input:focus {
+            outline: none;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+
+        .organizer-btn {
+            padding: 10px 20px;
+            background-color: #002222;
+            color: #00ff88;
+            border: 1px solid #00ff88;
+            border-radius: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .organizer-btn:hover {
+            background-color: #00ff88;
+            color: #002222;
+            box-shadow: 0 0 15px #00ff88;
+        }
+
+        #task-list {
+            list-style-type: none;
+            padding: 0 20px;
+        }
+
+        .task-item {
+            background-color: #002222;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid #00ff88;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .task-item:hover {
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+        }
+
+        .delete-btn {
+            background-color: #ff0044;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .delete-btn:hover {
+            background-color: #cc0033;
+            box-shadow: 0 0 15px rgba(255, 0, 68, 0.3);
+        }
+
+        /* Efeito de Terminal */
+        .terminal-effect::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 255, 136, 0.05) 0px,
+                rgba(0, 255, 136, 0.05) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 0;
+        }
+    </style>
+</head>
+<body class="terminal-effect">
+    <!-- Notepad -->
+    <div id="notepadPage" class="page active-page">
+        <div class="notepad-toolbar">
+            <button onclick="newFile()">NOVO</button>
+            <button onclick="document.getElementById('fileInput').click()">ABRIR</button>
+            <button onclick="saveFile()">SALVAR</button>
+            <button onclick="copyText()">COPIAR</button>
+            <button onclick="pasteText()">COLAR</button>
+            <button onclick="cutText()">RECORTAR</button>
+            <input type="file" id="fileInput" class="file-input" accept=".txt" onchange="openFile(event)">
+        </div>
+        <textarea id="editor" placeholder="INICIALIZANDO SISTEMA..."></textarea>
+    </div>
+
+    <!-- Organizador -->
+    <div id="organizerPage" class="page">
+        <div class="organizer-header">
+            <h1>CYBER ORGANIZER v1.0</h1>
+        </div>
+        <form id="task-form">
+            <input type="text" id="task-input" placeholder="INSIRA NOVA TAREFA..." required>
+            <button type="submit" class="organizer-btn">ADICIONAR</button>
+        </form>
+        <ul id="task-list"></ul>
+    </div>
+
+    <button class="page-toggle" id="toggleButton" onclick="togglePages()">▶ ORGANIZADOR</button>
+
+    <script>
+        // Notepad Functions
+        let currentFile = null;
+
+        function newFile() {
+            document.getElementById('editor').value = '';
+            currentFile = null;
+        }
+
+        function openFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('editor').value = e.target.result;
+                currentFile = file;
+            };
+            reader.readAsText(file);
+        }
+
+        function saveFile() {
+            const text = document.getElementById('editor').value;
+            const blob = new Blob([text], { type: 'text/plain' });
+
+            const filename = currentFile ? currentFile.name : 'cyber_doc.txt';
+
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = window.URL.createObjectURL(blob);
+            link.click();
+
+            window.URL.revokeObjectURL(link.href);
+        }
+
+        function copyText() {
+            document.getElementById('editor').select();
+            document.execCommand('copy');
+        }
+
+        function pasteText() {
+            document.getElementById('editor').focus();
+            document.execCommand('paste');
+        }
+
+        function cutText() {
+            document.getElementById('editor').select();
+            document.execCommand('cut');
+        }
+
+        // Organizador Functions
+        function saveTasks() {
+            const tasks = [];
+            document.querySelectorAll('.task-item').forEach(task => {
+                tasks.push(task.childNodes[0].textContent.trim());
+            });
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        function loadTasks() {
+            const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+            const taskList = document.getElementById('task-list');
+            taskList.innerHTML = '';
+
+            tasks.forEach(taskText => {
+                const li = document.createElement('li');
+                li.className = 'task-item';
+                li.appendChild(document.createTextNode(taskText));
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.textContent = 'REMOVER';
+                deleteBtn.onclick = () => {
+                    li.remove();
+                    saveTasks();
+                };
+
+                li.appendChild(deleteBtn);
+                taskList.appendChild(li);
+            });
+        }
+
+        // Page Toggle
+        function togglePages() {
+            const notepad = document.getElementById('notepadPage');
+            const organizer = document.getElementById('organizerPage');
+            const toggleBtn = document.getElementById('toggleButton');
+
+            if (notepad.classList.contains('active-page')) {
+                notepad.classList.remove('active-page');
+                organizer.classList.add('active-page');
+                toggleBtn.textContent = '▶ NOTEPAD';
+            } else {
+                organizer.classList.remove('active-page');
+                notepad.classList.add('active-page');
+                toggleBtn.textContent = '▶ ORGANIZADOR';
+            }
+        }
+
+        // Event Listeners
+        document.getElementById('task-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const input = document.getElementById('task-input');
+            const text = input.value.trim();
+
+            if (text) {
+                const li = document.createElement('li');
+                li.className = 'task-item';
+                li.appendChild(document.createTextNode(text));
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.textContent = 'REMOVER';
+                deleteBtn.onclick = () => {
+                    li.remove();
+                    saveTasks();
+                };
+
+                li.appendChild(deleteBtn);
+                document.getElementById('task-list').appendChild(li);
+                input.value = '';
+                saveTasks();
+            }
+        });
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTasks();
+
+            document.addEventListener('keydown', (e) => {
+                if (e.ctrlKey && e.key === 's') {
+                    e.preventDefault();
+                    saveFile();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
