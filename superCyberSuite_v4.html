@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberApp Suite</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Exo+2:wght@300;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cyber-blue: #00f3ff;
+            --neon-purple: #bc13fe;
+            --matrix-green: #0f0;
+            --dark-space: #0a0a12;
+            --tech-gray: #1a1a2e;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Exo 2', sans-serif;
+            background: var(--dark-space);
+            color: var(--cyber-blue);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tab-bar {
+            display: flex;
+            background: linear-gradient(145deg, #0f0f1a 0%, #1a1a2e 100%);
+            border-bottom: 2px solid var(--cyber-blue);
+        }
+
+        .tab-button {
+            padding: 15px 30px;
+            background: none;
+            border: none;
+            color: var(--cyber-blue);
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab-button.active {
+            background: rgba(0, 243, 255, 0.1);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+        }
+
+        .tab-button:hover {
+            background: rgba(0, 243, 255, 0.2);
+        }
+
+        .tab-content {
+            flex-grow: 1;
+            padding: 20px;
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Notepad Styles */
+        .notepad-toolbar {
+            padding: 15px;
+            background-color: #0f1a1a;
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        #editor {
+            width: 100%;
+            height: 80vh;
+            padding: 20px;
+            background: #001a1a;
+            border: 2px solid var(--cyber-blue);
+            color: var(--matrix-green);
+            font-family: 'Courier New', monospace;
+            resize: none;
+        }
+
+        /* Organizador RPG Styles */
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            height: 80vh;
+        }
+
+        .quest-log, .character, .shop {
+            background: linear-gradient(145deg, #0f0f1a 0%, #1a1a2e 100%);
+            padding: 20px;
+            border: 2px solid var(--cyber-blue);
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+        }
+
+        .task-item {
+            background: rgba(16, 16, 34, 0.8);
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid var(--neon-purple);
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Basic Organizer Styles */
+        .organizer-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        #basic-task-form {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        #basic-task-input {
+            flex-grow: 1;
+            padding: 10px;
+            background: #002222;
+            border: 1px solid var(--cyber-blue);
+            color: var(--cyber-blue);
+        }
+
+        #basic-task-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .basic-task-item {
+            background: rgba(16, 16, 34, 0.8);
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid var(--matrix-green);
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .delete-btn {
+            background: #ff0044;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="tab-bar">
+        <button class="tab-button active" onclick="openTab('notepad')">📝 CYBER PAD</button>
+        <button class="tab-button" onclick="openTab('basic-organizer')">📋 CYBER ORGANIZER</button>
+        <button class="tab-button" onclick="openTab('rpg-organizer')">🎮 RPG ORGANIZER</button>
+    </div>
+
+    <!-- Notepad -->
+    <div id="notepad" class="tab-content active">
+        <div class="notepad-toolbar">
+            <button onclick="newFile()">NOVO</button>
+            <button onclick="document.getElementById('fileInput').click()">ABRIR</button>
+            <button onclick="saveFile()">SALVAR</button>
+            <input type="file" id="fileInput" hidden accept=".txt" onchange="openFile(event)">
+        </div>
+        <textarea id="editor" placeholder="INICIALIZANDO SISTEMA..."></textarea>
+    </div>
+
+    <!-- Basic Organizer -->
+    <div id="basic-organizer" class="tab-content">
+        <div class="organizer-container">
+            <form id="basic-task-form">
+                <input type="text" id="basic-task-input" placeholder="Nova tarefa..." required>
+                <button type="submit">Adicionar</button>
+            </form>
+            <ul id="basic-task-list"></ul>
+        </div>
+    </div>
+
+    <!-- RPG Organizer -->
+    <div id="rpg-organizer" class="tab-content">
+        <div class="container">
+            <div class="quest-log">
+                <h2>📡 Missões Ativas</h2>
+                <form id="rpg-task-form">
+                    <input type="text" id="rpg-task-input" placeholder="Nova missão" required>
+                    <select id="difficulty">
+                        <option value="easy">Fácil (10 XP)</option>
+                        <option value="medium">Médio (25 XP)</option>
+                        <option value="hard">Difícil (50 XP)</option>
+                    </select>
+                    <button type="submit">🔧 Iniciar Missão</button>
+                </form>
+                <div id="rpg-task-list"></div>
+            </div>
+
+            <div class="character">
+                <h2>🤖 Cyber Runner</h2>
+                <div class="stats">
+                    <div>Nível: <span id="level">1</span></div>
+                    <div>XP: <span id="xp">0</span>/<span id="xpNeeded">100</span></div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="xpBar" style="width: 0%"></div>
+                    </div>
+                    <div>Créditos: <span id="gold">100</span> ⚡</div>
+                    <div>Integridade: <span id="health">100</span>%</div>
+                </div>
+            </div>
+
+            <div class="shop">
+                <h2>🛸 Loja Cyber</h2>
+                <div class="shop-item">
+                    <h3>Nanobots de Reparo (+20% Integridade)</h3>
+                    <p>Preço: 50 ⚡</p>
+                    <button onclick="buyItem('healthPotion')">Comprar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sistema de Abas
+        function openTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        // Sistema RPG
+        let rpgState = {
+            level: 1,
+            xp: 0,
+            gold: 100,
+            health: 100,
+            xpNeeded: 100,
+            tasks: []
+        };
+
+        function loadRPGState() {
+            const saved = localStorage.getItem('rpgState');
+            if (saved) rpgState = JSON.parse(saved);
+            updateRPGUI();
+            renderRPGTasks();
+        }
+
+        function saveRPGState() {
+            localStorage.setItem('rpgState', JSON.stringify(rpgState));
+            updateRPGUI();
+        }
+
+        function updateRPGUI() {
+            document.getElementById('level').textContent = rpgState.level;
+            document.getElementById('xp').textContent = rpgState.xp;
+            document.getElementById('xpNeeded').textContent = rpgState.xpNeeded;
+            document.getElementById('gold').textContent = rpgState.gold;
+            document.getElementById('health').textContent = rpgState.health;
+            document.getElementById('xpBar').style.width =
+                (rpgState.xp / rpgState.xpNeeded * 100) + '%';
+        }
+
+        document.getElementById('rpg-task-form')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const taskText = document.getElementById('rpg-task-input').value;
+            const difficulty = document.getElementById('difficulty').value;
+
+            const task = {
+                text: taskText,
+                difficulty: difficulty,
+                id: Date.now()
+            };
+
+            rpgState.tasks.push(task);
+            renderRPGTasks();
+            document.getElementById('rpg-task-input').value = '';
+            saveRPGState();
+        });
+
+        function renderRPGTasks() {
+            const taskList = document.getElementById('rpg-task-list');
+            if (!taskList) return;
+
+            taskList.innerHTML = '';
+            rpgState.tasks.forEach(task => {
+                const div = document.createElement('div');
+                div.className = 'task-item';
+                div.innerHTML = `
+                    ${task.text} (${task.difficulty})
+                    <button onclick="completeRPGTask(${task.id})">Concluir ✔️</button>
+                `;
+                taskList.appendChild(div);
+            });
+        }
+
+        function completeRPGTask(id) {
+            const task = rpgState.tasks.find(t => t.id === id);
+            if (!task) return;
+
+            let xpGained = 10;
+            if (task.difficulty === 'medium') xpGained = 25;
+            if (task.difficulty === 'hard') xpGained = 50;
+
+            rpgState.xp += xpGained;
+            rpgState.gold += xpGained * 2;
+
+            if (rpgState.xp >= rpgState.xpNeeded) {
+                rpgState.level++;
+                rpgState.xp -= rpgState.xpNeeded;
+                rpgState.xpNeeded = Math.floor(rpgState.xpNeeded * 1.5);
+                rpgState.health = 100;
+            }
+
+            rpgState.tasks = rpgState.tasks.filter(t => t.id !== id);
+            renderRPGTasks();
+            saveRPGState();
+        }
+
+        function buyItem(item) {
+            if (item === 'healthPotion' && rpgState.gold >= 50) {
+                rpgState.gold -= 50;
+                rpgState.health = Math.min(rpgState.health + 20, 100);
+                saveRPGState();
+            }
+        }
+
+        // Sistema Organizador Básico
+        let basicTasks = [];
+
+        function loadBasicTasks() {
+            const saved = localStorage.getItem('basicTasks');
+            if (saved) basicTasks = JSON.parse(saved);
+            renderBasicTasks();
+        }
+
+        function saveBasicTasks() {
+            localStorage.setItem('basicTasks', JSON.stringify(basicTasks));
+        }
+
+        document.getElementById('basic-task-form')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const input = document.getElementById('basic-task-input');
+            const text = input.value.trim();
+
+            if (text) {
+                basicTasks.push({
+                    id: Date.now(),
+                    text: text
+                });
+                input.value = '';
+                renderBasicTasks();
+                saveBasicTasks();
+            }
+        });
+
+        function renderBasicTasks() {
+            const taskList = document.getElementById('basic-task-list');
+            taskList.innerHTML = '';
+
+            basicTasks.forEach(task => {
+                const li = document.createElement('li');
+                li.className = 'basic-task-item';
+                li.innerHTML = `
+                    ${task.text}
+                    <button class="delete-btn" onclick="deleteBasicTask(${task.id})">Remover</button>
+                `;
+                taskList.appendChild(li);
+            });
+        }
+
+        function deleteBasicTask(id) {
+            basicTasks = basicTasks.filter(t => t.id !== id);
+            renderBasicTasks();
+            saveBasicTasks();
+        }
+
+        // Sistema Notepad
+        let currentFile = null;
+
+        function newFile() {
+            document.getElementById('editor').value = '';
+            currentFile = null;
+        }
+
+        function openFile(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('editor').value = e.target.result;
+                currentFile = file;
+            };
+            reader.readAsText(file);
+        }
+
+        function saveFile() {
+            const text = document.getElementById('editor').value;
+            const blob = new Blob([text], { type: 'text/plain' });
+            const filename = currentFile?.name || 'cyber_doc.txt';
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = URL.createObjectURL(blob);
+            link.click();
+            URL.revokeObjectURL(link.href);
+        }
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            loadRPGState();
+            loadBasicTasks();
+        });
+    </script>
+</body>
+</html>
