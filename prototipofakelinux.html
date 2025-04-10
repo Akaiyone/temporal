@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyberpunk Notes</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #111;
+            color: #eee;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: #222;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+            display: flex;
+            width: 80%;
+            max-width: 1200px;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            background-color: #333;
+            color: #00ffcc;
+            padding: 20px;
+            width: 250px;
+        }
+
+        .sidebar h2 {
+            color: #00ffcc;
+            margin-top: 0;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar ul li {
+            padding: 10px;
+            margin-bottom: 8px;
+            background-color: #444;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .sidebar ul li:hover {
+            background-color: #555;
+        }
+
+        .sidebar button {
+            background-color: #00ffcc;
+            color: #111;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .sidebar button:hover {
+            background-color: #00aaff;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+            color: #eee;
+        }
+
+        .notes-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .notes-header h2 {
+            color: #ff00ff;
+            margin: 0;
+        }
+
+        .notes-header button {
+            background-color: #ff00ff;
+            color: #111;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        .notes-header button:hover {
+            background-color: #cc00cc;
+        }
+
+        #note-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #note-list li {
+            padding: 10px;
+            margin-bottom: 8px;
+            background-color: #333;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #note-list li:hover {
+            background-color: #444;
+        }
+
+        #note-editor {
+            background-color: #222;
+            padding: 20px;
+            border-radius: 4px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        #note-content {
+            width: 100%;
+            min-height: 200px;
+            background-color: #444;
+            color: #eee;
+            border: none;
+            padding: 10px;
+            box-sizing: border-box;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .editor-buttons {
+            margin-top: 10px;
+        }
+
+        .editor-buttons button {
+            background-color: #f0f000;
+            color: #111;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-right: 10px;
+            transition: background-color 0.3s ease;
+        }
+
+        .editor-buttons button:hover {
+            background-color: #cccc00;
+        }
+
+        .editor-buttons button#delete-note-btn {
+            background-color: #ff3333;
+            color: #eee;
+        }
+
+        .editor-buttons button#delete-note-btn:hover {
+            background-color: #cc0000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <h2>Pastas</h2>
+            <ul id="folder-list">
+                </ul>
+            <button id="add-folder-btn">Nova Pasta</button>
+        </aside>
+        <main class="main-content">
+            <div class="notes-header">
+                <h2>Blocos de Notas</h2>
+                <button id="add-note-btn">Novo Bloco de Notas</button>
+            </div>
+            <ul id="note-list">
+                </ul>
+            <div id="note-editor">
+                <textarea id="note-content"></textarea>
+                <div class="editor-buttons">
+                    <button id="save-note-btn">Salvar</button>
+                    <button id="delete-note-btn">Excluir</button>
+                    <button id="close-editor-btn">Fechar</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const folderList = document.getElementById('folder-list');
+            const addFolderBtn = document.getElementById('add-folder-btn');
+            const noteList = document.getElementById('note-list');
+            const addNoteBtn = document.getElementById('add-note-btn');
+            const noteEditor = document.getElementById('note-editor');
+            const noteContent = document.getElementById('note-content');
+            const saveNoteBtn = document.getElementById('save-note-btn');
+            const deleteNoteBtn = document.getElementById('delete-note-btn');
+            const closeEditorBtn = document.getElementById('close-editor-btn');
+
+            let folders = [];
+            let currentFolderId = null;
+            let currentNoteId = null;
+
+            // Função para renderizar a lista de pastas
+            function renderFolders() {
+                folderList.innerHTML = '';
+                folders.forEach(folder => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = folder.name;
+                    listItem.addEventListener('click', () => {
+                        currentFolderId = folder.id;
+                        renderNotes(currentFolderId);
+                    });
+                    folderList.appendChild(listItem);
+                });
+            }
+
+            // Função para adicionar uma nova pasta
+            addFolderBtn.addEventListener('click', () => {
+                const folderName = prompt('Digite o nome da nova pasta:');
+                if (folderName) {
+                    const newFolder = {
+                        id: Date.now(), // Usamos a data/hora atual como um ID único
+                        name: folderName,
+                        notes: []
+                    };
+                    folders.push(newFolder);
+                    renderFolders();
+                    // Opcional: salvar no localStorage aqui
+                }
+            });
+
+            // Função para renderizar os blocos de notas da pasta selecionada
+            function renderNotes(folderId) {
+                noteList.innerHTML = '';
+                const currentFolder = folders.find(folder => folder.id === folderId);
+                if (currentFolder) {
+                    currentFolder.notes.forEach(note => {
+                        const listItem = document.createElement('li');
+                        listItem.textContent = note.title || 'Sem título';
+                        listItem.addEventListener('click', () => {
+                            currentNoteId = note.id;
+                            noteContent.value = note.content || '';
+                            noteEditor.style.display = 'block';
+                        });
+                        noteList.appendChild(listItem);
+                    });
+                }
+            }
+
+            // Função para adicionar um novo bloco de notas
+            addNoteBtn.addEventListener('click', () => {
+                if (currentFolderId) {
+                    const newNote = {
+                        id: Date.now(),
+                        title: 'Novo Bloco de Notas',
+                        content: ''
+                    };
+                    const currentFolder = folders.find(folder => folder.id === currentFolderId);
+                    if (currentFolder) {
+                        currentFolder.notes.push(newNote);
+                        renderNotes(currentFolderId);
+                        noteContent.value = '';
+                        currentNoteId = newNote.id;
+                        noteEditor.style.display = 'block';
+                        // Opcional: salvar no localStorage aqui
+                    }
+                } else {
+                    alert('Por favor, selecione uma pasta primeiro.');
+                }
+            });
+
+            // Função para salvar o bloco de notas atual
+            saveNoteBtn.addEventListener('click', () => {
+                if (currentFolderId && currentNoteId) {
+                    const currentFolder = folders.find(folder => folder.id === currentFolderId);
+                    if (currentFolder) {
+                        const currentNote = currentFolder.notes.find(note => note.id === currentNoteId);
+                        if (currentNote) {
+                            currentNote.content = noteContent.value;
+                            // Você pode adicionar uma lógica para pedir um título aqui também
+                            renderNotes(currentFolderId);
+                            noteEditor.style.display = 'none';
+                            // Opcional: salvar no localStorage aqui
+                        }
+                    }
+                }
+            });
+
+            // Função para excluir o bloco de notas atual
+            deleteNoteBtn.addEventListener('click', () => {
+                if (currentFolderId && currentNoteId) {
+                    const currentFolder = folders.find(folder => folder.id === currentFolderId);
+                    if (currentFolder) {
+                        currentFolder.notes = currentFolder.notes.filter(note => note.id !== currentNoteId);
+                        renderNotes(currentFolderId);
+                        noteEditor.style.display = 'none';
+                        currentNoteId = null;
+                        // Opcional: salvar no localStorage aqui
+                    }
+                }
+            });
+
+            // Função para fechar o editor de notas
+            closeEditorBtn.addEventListener('click', () => {
+                noteEditor.style.display = 'none';
+                currentNoteId = null;
+            });
+
+            // Inicialmente, renderizar as pastas (se houver alguma salva)
+            renderFolders();
+        });
+    </script>
+</body>
+</html>
