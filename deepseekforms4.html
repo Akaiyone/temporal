@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Steampunk Interactive Geometry</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #1a1a1a;
+        }
+        #info {
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            text-align: center;
+            color: #D4AF37;
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            text-shadow: 2px 2px 2px #000;
+            z-index: 100;
+        }
+        .steampunk-border {
+            position: fixed;
+            border: 3px solid #B87333;
+            pointer-events: none;
+            margin: 20px;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            box-shadow: 0 0 20px #8B0000;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">STEAMPUNK GEOMETRY LAB - [CLICK/DRAG: CORES] [CLIQUE FORMAS: MULTIPLICAR] [ESC: SAIR]</div>
+    <div class="steampunk-border"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer, shapes = [];
+        let isAnimating = true;
+        let isDragging = false;
+        let raycaster = new THREE.Raycaster();
+        let mouse = new THREE.Vector2();
+        let hoveredObject = null;
+
+        const geometries = [
+            () => new THREE.SphereGeometry(1.2, 16, 12),
+            () => new THREE.CylinderGeometry(0.8, 0.8, 2.5, 16),
+            () => new THREE.TorusGeometry(1.5, 0.4, 16, 32),
+            () => new THREE.OctahedronGeometry(1.8),
+            () => new THREE.IcosahedronGeometry(1.8),
+            () => new THREE.TorusKnotGeometry(1.2, 0.3, 64, 16),
+            () => new THREE.ConeGeometry(1.2, 2.5, 16),
+            () => new THREE.TetrahedronGeometry(1.8),
+            () => new THREE.DodecahedronGeometry(1.8),
+            () => new THREE.ExtrudeGeometry(new THREE.Shape().moveTo(0,0).lineTo(1,0).lineTo(0.5,1.5)),
+            () => new THREE.TextGeometry('STEAM', {size: 0.8, height: 0.2}),
+            () => new THREE.LatheGeometry([new THREE.Vector2(0,0), new THREE.Vector2(1,1), new THREE.Vector2(2,0)]),
+            () => new THREE.RingGeometry(1, 1.5, 16),
+            () => new THREE.CapsuleGeometry(0.8, 1.5, 4, 8),
+            () => new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+                new THREE.Vector3(0, 0, 0),
+                new THREE.Vector3(2, 2, 0),
+                new THREE.Vector3(0, 4, 0)
+            ]), 64, 0.5, 8, false),
+            () => new THREE.ParametricGeometry((u, v, target) => {
+                u = u * 2 - 1;
+                v = v * 2 - 1;
+                target.set(u*2, v*2, Math.sin(u*v*Math.PI));
+            }, 24, 24),
+            () => new THREE.OctahedronGeometry(1.8).toNonIndexed(),
+            () => new THREE.ConvexGeometry([
+                new THREE.Vector3(-1,-1,-1),
+                new THREE.Vector3(1,-1,-1),
+                new THREE.Vector3(-1,1,-1),
+                new THREE.Vector3(1,1,-1),
+                new THREE.Vector3(-1,-1,1),
+                new THREE.Vector3(1,-1,1),
+                new THREE.Vector3(-1,1,1),
+                new THREE.Vector3(1,1,1)
+            ]),
+            () => new THREE.TorusKnotGeometry(1.5, 0.5, 64, 16, 2, 3),
+            () => new THREE.BoxGeometry(2, 2, 2),
+            () => new THREE.SphereGeometry(1.5, 32, 16, 0, Math.PI)
+        ];
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0x1a1a1a);
+            document.body.appendChild(renderer.domElement);
+
+            // Iluminação
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
+            directionalLight.position.set(10, 10, 10);
+            scene.add(directionalLight);
+
+            // Posicionamento inicial
+            const radius = 10;
+            const positions = [];
+            for(let i = 0; i < geometries.length; i++) {
+                const angle = (i * (Math.PI * 2)) / geometries.length;
+                positions.push({
+                    x: Math.cos(angle) * radius,
+                    z: Math.sin(angle) * radius
+                });
+            }
+
+            // Criar formas
+            geometries.forEach((geoFunc, i) => {
+                try {
+                    const geometry = geoFunc();
+                    const material = new THREE.MeshPhongMaterial({
+                        color: new THREE.Color(Math.random(), Math.random(), Math.random()),
+                        wireframe: true,
+                        emissive: 0x000000,
+                        shininess: 100,
+                        transparent: true,
+                        opacity: 0.9
+                    });
+
+                    const mesh = new THREE.Mesh(geometry, material);
+                    mesh.position.set(positions[i].x, 0, positions[i].z);
+                    mesh.userData.originalPosition = mesh.position.clone();
+                    scene.add(mesh);
+                    shapes.push(mesh);
+                } catch(e) {
+                    console.warn(`Erro na forma ${i}:`, e);
+                }
+            });
+
+            camera.position.set(0, 20, 25);
+            camera.lookAt(0, 0, 0);
+
+            // Event listeners
+            document.addEventListener('keydown', (e) => e.key === 'Escape' && stopAnimation());
+            setupInteraction();
+            animate();
+        }
+
+        function generateRandomColor() {
+            return new THREE.Color(
+                Math.random(),
+                Math.random(),
+                Math.random()
+            );
+        }
+
+        function changeColors() {
+            shapes.forEach(shape => {
+                shape.material.color = generateRandomColor();
+                shape.material.needsUpdate = true;
+            });
+        }
+
+        function setupInteraction() {
+            const domElement = renderer.domElement;
+
+            // Mudança de cores
+            domElement.addEventListener('pointerdown', (e) => {
+                isDragging = true;
+                changeColors();
+            });
+
+            domElement.addEventListener('pointermove', (e) => {
+                if(isDragging) changeColors();
+
+                // Efeito glow
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(scene.children);
+
+                if(intersects.length > 0) {
+                    if(hoveredObject !== intersects[0].object) {
+                        if(hoveredObject) hoveredObject.material.emissive.setHex(0x000000);
+                        hoveredObject = intersects[0].object;
+                        hoveredObject.material.emissive.setHex(0xFFFF00);
+                    }
+                } else if(hoveredObject) {
+                    hoveredObject.material.emissive.setHex(0x000000);
+                    hoveredObject = null;
+                }
+            });
+
+            domElement.addEventListener('pointerup', () => isDragging = false);
+            domElement.addEventListener('pointerleave', () => isDragging = false);
+
+            // Clique para multiplicar
+            domElement.addEventListener('click', (e) => {
+                if(isDragging) return;
+
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(scene.children);
+
+                if(intersects.length > 0) {
+                    const original = intersects[0].object;
+                    const clones = [];
+
+                    for(let i = 0; i < 3; i++) {
+                        const clone = original.clone();
+                        clone.material = original.material.clone();
+                        clone.position.copy(original.position)
+                            .add(new THREE.Vector3(
+                                (Math.random() - 0.5) * 4,
+                                (Math.random() - 0.5) * 4,
+                                (Math.random() - 0.5) * 4
+                            ));
+                        clone.scale.multiplyScalar(0.8);
+                        clones.push(clone);
+                    }
+
+                    clones.forEach(clone => {
+                        scene.add(clone);
+                        shapes.push(clone);
+                    });
+                }
+            });
+        }
+
+        function animate() {
+            if(!isAnimating) return;
+
+            requestAnimationFrame(animate);
+
+            // Animar formas
+            shapes.forEach((shape, i) => {
+                shape.rotation.x += 0.005;
+                shape.rotation.y += 0.005;
+
+                // Movimento orbital
+                const time = Date.now() * 0.0005 + i;
+                if(shape.userData.originalPosition) {
+                    shape.position.x = shape.userData.originalPosition.x * Math.cos(time);
+                    shape.position.z = shape.userData.originalPosition.z * Math.sin(time);
+                }
+                shape.position.y = Math.sin(Date.now() * 0.001 + i) * 2;
+            });
+
+            // Movimento da câmera
+            camera.position.x = Math.sin(Date.now() * 0.0003) * 30;
+            camera.position.z = Math.cos(Date.now() * 0.0003) * 30;
+            camera.lookAt(0, 0, 0);
+
+            renderer.render(scene, camera);
+        }
+
+        function stopAnimation() {
+            isAnimating = false;
+            document.body.innerHTML = '<h1 style="color:#D4AF37;text-align:center;margin-top:40vh">LAB SHUTDOWN</h1>';
+        }
+
+        init();
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
