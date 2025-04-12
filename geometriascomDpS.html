@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cyber Shapes 4D</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Orbitron', sans-serif;
+        }
+        .cyber-title {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            text-align: center;
+            color: #0ff;
+            font-size: 1.5em;
+            text-shadow: 0 0 10px #0ff;
+            z-index: 100;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <h1 class="cyber-title">CYBER GEOMETRY v4.0</h1>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let renderer, scene, camera;
+        let shapes = {};
+        const clock = new THREE.Clock();
+
+        function init() {
+            // Configuração básica
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Luzes
+            const ambientLight = new THREE.AmbientLight(0x444444);
+            scene.add(ambientLight);
+
+            const pointLight = new THREE.PointLight(0xffffff, 1, 100);
+            pointLight.position.set(0, 20, 50);
+            scene.add(pointLight);
+
+            // Criar formas
+            createTorus();
+            createTesseract();
+            createSphere();
+            createCube();
+
+            // Posicionar câmera
+            camera.position.z = 40;
+            camera.position.y = 15;
+        }
+
+        function createTorus() {
+            const geometry = new THREE.TorusGeometry(3, 1, 16, 100);
+            const material = new THREE.MeshStandardMaterial({
+                color: 0xff00ff,
+                wireframe: true,
+                emissive: 0xff00ff,
+                metalness: 0.9
+            });
+            shapes.torus = new THREE.Mesh(geometry, material);
+            shapes.torus.position.set(-10, 0, 0);
+            scene.add(shapes.torus);
+        }
+
+        function createTesseract() {
+            const geometry = new THREE.BoxGeometry(5, 5, 5);
+            const edges = new THREE.EdgesGeometry(geometry);
+            const material = new THREE.LineBasicMaterial({
+                color: 0x00ffff,
+                linewidth: 2
+            });
+            shapes.tesseract = new THREE.LineSegments(edges, material);
+            shapes.tesseract.position.set(10, 0, 0);
+            scene.add(shapes.tesseract);
+        }
+
+        function createSphere() {
+            const geometry = new THREE.SphereGeometry(3, 32, 32);
+            const material = new THREE.MeshPhongMaterial({
+                color: 0x00ff00,
+                wireframe: true,
+                emissive: 0x00ff00
+            });
+            shapes.sphere = new THREE.Mesh(geometry, material);
+            shapes.sphere.position.set(0, 10, 0);
+            scene.add(shapes.sphere);
+        }
+
+        function createCube() {
+            const geometry = new THREE.BoxGeometry(4, 4, 4);
+            const material = new THREE.MeshLambertMaterial({
+                color: 0xffa500,
+                transparent: true,
+                opacity: 0.8,
+                emissive: 0xff4500
+            });
+            shapes.cube = new THREE.Mesh(geometry, material);
+            shapes.cube.position.set(0, -10, 0);
+            scene.add(shapes.cube);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+
+            // Animar toróide
+            shapes.torus.rotation.x += delta;
+            shapes.torus.rotation.y += delta * 0.5;
+
+            // Animar tesseract
+            shapes.tesseract.rotation.x = time;
+            shapes.tesseract.rotation.y = time * 0.7;
+
+            // Animar esfera
+            shapes.sphere.scale.set(
+                1 + Math.sin(time) * 0.2,
+                1 + Math.cos(time) * 0.2,
+                1 + Math.sin(time) * 0.2
+            );
+
+            // Animar cubo
+            shapes.cube.rotation.x = time * 0.5;
+            shapes.cube.rotation.y = time * 0.3;
+
+            // Movimento da câmera
+            camera.position.x = Math.sin(time) * 10;
+            camera.lookAt(scene.position);
+
+            renderer.render(scene, camera);
+        }
+
+        // Event listeners
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+        animate();
+    </script>
+</body>
+</html>
